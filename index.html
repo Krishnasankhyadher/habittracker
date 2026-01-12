@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Habit Tracker OS</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0a0a0a;
+            color: #e5e5e5;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+            padding: 40px 60px;
+        }
+
+        header {
+            margin-bottom: 48px;
+            padding-bottom: 32px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            color: #ffffff;
+        }
+
+        .date {
+            font-size: 14px;
+            color: #888;
+            font-weight: 400;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 24px;
+            margin-bottom: 48px;
+        }
+
+        .stat-card {
+            background: #111;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            background: #151515;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #666;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            font-size: 36px;
+            font-weight: 600;
+            color: #fff;
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+        }
+
+        .stat-bar {
+            height: 3px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 2px;
+            overflow: hidden;
+            margin-top: 12px;
+        }
+
+        .stat-bar-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+        }
+
+        .section {
+            background: #111;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 32px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 28px;
+            color: #fff;
+            letter-spacing: -0.3px;
+        }
+
+        .tracker-grid {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .tracker-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            min-width: 1000px;
+        }
+
+        .tracker-table thead th {
+            position: sticky;
+            top: 0;
+            background: #111;
+            z-index: 10;
+            padding: 16px 12px;
+            text-align: left;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: #666;
+            font-weight: 500;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .tracker-table thead th:first-child {
+            text-align: left;
+            width: 200px;
+        }
+
+        .tracker-table thead th:not(:first-child) {
+            text-align: center;
+            width: 60px;
+        }
+
+        .date-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .day-name {
+            font-size: 10px;
+            color: #888;
+        }
+
+        .day-date {
+            font-size: 12px;
+            color: #aaa;
+        }
+
+        .tracker-table tbody td {
+            padding: 14px 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .tracker-table tbody tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .habit-name {
+            font-size: 14px;
+            color: #e5e5e5;
+            font-weight: 400;
+        }
+
+        .checkbox-cell {
+            text-align: center;
+        }
+
+        .checkbox {
+            width: 28px;
+            height: 28px;
+            border: 1.5px solid rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .checkbox:hover {
+            border-color: rgba(255, 255, 255, 0.3);
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .checkbox.checked {
+            background: #fff;
+            border-color: #fff;
+        }
+
+        .checkbox.checked::after {
+            content: '✓';
+            color: #0a0a0a;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .completion-row td {
+            padding: 20px 12px 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .completion-badge {
+            display: inline-block;
+            padding: 6px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .completion-low { background: rgba(239, 68, 68, 0.15); color: #ef4444; }
+        .completion-medium { background: rgba(251, 191, 36, 0.15); color: #fbbf24; }
+        .completion-high { background: rgba(34, 197, 94, 0.15); color: #22c55e; }
+
+        .chart-container {
+            height: 280px;
+            position: relative;
+            margin-top: 24px;
+        }
+
+        .chart-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .chart-grid-line {
+            stroke: rgba(255, 255, 255, 0.05);
+            stroke-width: 1;
+        }
+
+        .chart-line {
+            fill: none;
+            stroke: #fff;
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+        }
+
+        .chart-area {
+            fill: url(#gradient);
+            opacity: 0.15;
+        }
+
+        .chart-point {
+            fill: #fff;
+            transition: r 0.2s ease;
+        }
+
+        .chart-point:hover {
+            r: 5;
+        }
+
+        .chart-labels {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 16px;
+            padding: 0 20px;
+        }
+
+        .chart-label {
+            font-size: 11px;
+            color: #666;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+        }
+
+        .summary-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 10px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .summary-card:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .summary-habit {
+            font-size: 13px;
+            color: #e5e5e5;
+            margin-bottom: 12px;
+            font-weight: 400;
+        }
+
+        .summary-bar {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 3px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .summary-bar-fill {
+            height: 100%;
+            transition: width 0.6s ease;
+            border-radius: 3px;
+        }
+
+        .summary-percentage {
+            font-size: 12px;
+            color: #aaa;
+            margin-top: 8px;
+            font-weight: 500;
+        }
+
+        @media (max-width: 1200px) {
+            .stats-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 24px 20px;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="header-top">
+                <h1>Habit OS 2026</h1>
+                <div class="date" id="currentDate"></div>
+            </div>
+        </header>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-label">Today's Progress</div>
+                <div class="stat-value" id="todayProgress">0%</div>
+                <div class="stat-bar">
+                    <div class="stat-bar-fill" id="todayBar"></div>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Best Streak</div>
+                <div class="stat-value" id="bestStreak">0</div>
+                <div style="font-size: 12px; color: #666; margin-top: 4px;">days</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Weekly Average</div>
+                <div class="stat-value" id="weeklyAvg">0%</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Period Average</div>
+                <div class="stat-value" id="periodAvg">0%</div>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Habit Tracker</div>
+            <div class="tracker-grid">
+                <table class="tracker-table">
+                    <thead id="tableHeader"></thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Completion Trend</div>
+            <div class="chart-container">
+                <svg class="chart-svg" id="chartSvg"></svg>
+            </div>
+            <div class="chart-labels" id="chartLabels"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Habit Summary</div>
+            <div class="summary-grid" id="summaryGrid"></div>
+        </div>
+    </div>
+
+    <script>
+        var config = {
+            year: 2026,
+            daysToShow: 14,
+            habits: [
+                'Clean diet',
+                'Exercise/physical activity',
+                'less than 5 four sscreen time ',
+                'Personal comitments ',
+                'give 5+ hours to your work'
+            ],
+            startDate: new Date(2026, 0, 6)
+        };
+
+        var habitData = {};
+
+        function initializeData() {
+            for (var i = 0; i < config.habits.length; i++) {
+                var habit = config.habits[i];
+                habitData[habit] = {};
+                for (var j = 0; j < config.daysToShow; j++) {
+                    habitData[habit][j] = Math.random() > 0.3;
+                }
+            }
+        }
+
+        function formatDate(date) {
+            var options = { month: 'short', day: 'numeric' };
+            return date.toLocaleDateString('en-US', options);
+        }
+
+        function getDayName(date) {
+            var options = { weekday: 'short' };
+            return date.toLocaleDateString('en-US', options).toUpperCase();
+        }
+
+        function getDateForDay(dayIndex) {
+            var date = new Date(config.startDate);
+            date.setDate(date.getDate() + dayIndex);
+            return date;
+        }
+
+        function getDayCompletion(day) {
+            var completed = 0;
+            for (var i = 0; i < config.habits.length; i++) {
+                if (habitData[config.habits[i]][day]) {
+                    completed++;
+                }
+            }
+            return config.habits.length > 0 ? (completed / config.habits.length) * 100 : 0;
+        }
+
+        function getHabitCompletion(habit) {
+            var completed = 0;
+            for (var i = 0; i < config.daysToShow; i++) {
+                if (habitData[habit][i]) {
+                    completed++;
+                }
+            }
+            return (completed / config.daysToShow) * 100;
+        }
+
+        function getCompletionClass(percentage) {
+            if (percentage < 60) return 'completion-low';
+            if (percentage < 80) return 'completion-medium';
+            return 'completion-high';
+        }
+
+        function getBarColor(percentage) {
+            if (percentage < 60) return '#ef4444';
+            if (percentage < 80) return '#fbbf24';
+            return '#22c55e';
+        }
+
+        function calculateStats() {
+            var todayIndex = 5;
+            var todayCompletion = getDayCompletion(todayIndex);
+            
+            var maxStreak = 0;
+            var currentStreak = 0;
+            for (var i = 0; i < config.daysToShow; i++) {
+                if (getDayCompletion(i) >= 80) {
+                    currentStreak++;
+                    maxStreak = Math.max(maxStreak, currentStreak);
+                } else {
+                    currentStreak = 0;
+                }
+            }
+
+            var weeklyTotal = 0;
+            for (var i = 0; i < Math.min(7, config.daysToShow); i++) {
+                weeklyTotal += getDayCompletion(i);
+            }
+            var weeklyAvg = weeklyTotal / Math.min(7, config.daysToShow);
+
+            var periodTotal = 0;
+            for (var i = 0; i < config.daysToShow; i++) {
+                periodTotal += getDayCompletion(i);
+            }
+            var periodAvg = periodTotal / config.daysToShow;
+
+            document.getElementById('todayProgress').textContent = Math.round(todayCompletion) + '%';
+            document.getElementById('todayBar').style.width = todayCompletion + '%';
+            document.getElementById('todayBar').style.background = getBarColor(todayCompletion);
+            document.getElementById('bestStreak').textContent = maxStreak;
+            document.getElementById('weeklyAvg').textContent = Math.round(weeklyAvg) + '%';
+            document.getElementById('periodAvg').textContent = Math.round(periodAvg) + '%';
+        }
+
+        function renderTable() {
+            var header = document.getElementById('tableHeader');
+            var body = document.getElementById('tableBody');
+
+            var headerHTML = '<tr><th>Habit</th>';
+            for (var i = 0; i < config.daysToShow; i++) {
+                var date = getDateForDay(i);
+                var dayName = getDayName(date);
+                var dayDate = formatDate(date).split(' ')[1];
+                headerHTML += '<th><div class="date-header">';
+                headerHTML += '<span class="day-name">' + dayName + '</span>';
+                headerHTML += '<span class="day-date">' + dayDate + '</span>';
+                headerHTML += '</div></th>';
+            }
+            headerHTML += '</tr>';
+            header.innerHTML = headerHTML;
+
+            var bodyHTML = '';
+            for (var h = 0; h < config.habits.length; h++) {
+                var habit = config.habits[h];
+                bodyHTML += '<tr><td class="habit-name">' + habit + '</td>';
+                for (var day = 0; day < config.daysToShow; day++) {
+                    var checked = habitData[habit][day] ? 'checked' : '';
+                    bodyHTML += '<td class="checkbox-cell">';
+                    bodyHTML += '<div class="checkbox ' + checked + '" data-habit="' + h + '" data-day="' + day + '"></div>';
+                    bodyHTML += '</td>';
+                }
+                bodyHTML += '</tr>';
+            }
+
+            bodyHTML += '<tr class="completion-row"><td class="habit-name">Daily %</td>';
+            for (var day = 0; day < config.daysToShow; day++) {
+                var completion = getDayCompletion(day);
+                var completionClass = getCompletionClass(completion);
+                bodyHTML += '<td class="checkbox-cell">';
+                bodyHTML += '<span class="completion-badge ' + completionClass + '">' + Math.round(completion) + '%</span>';
+                bodyHTML += '</td>';
+            }
+            bodyHTML += '</tr>';
+
+            body.innerHTML = bodyHTML;
+
+            var checkboxes = document.querySelectorAll('.checkbox');
+            for (var i = 0; i < checkboxes.length; i++) {
+                checkboxes[i].addEventListener('click', handleCheckboxClick);
+            }
+        }
+
+        function handleCheckboxClick(e) {
+            var habitIndex = parseInt(e.target.getAttribute('data-habit'));
+            var day = parseInt(e.target.getAttribute('data-day'));
+            var habit = config.habits[habitIndex];
+            habitData[habit][day] = !habitData[habit][day];
+            renderTable();
+            calculateStats();
+            renderChart();
+            renderSummary();
+        }
+
+        function renderChart() {
+            var svg = document.getElementById('chartSvg');
+            var width = svg.clientWidth;
+            var height = svg.clientHeight;
+            var padding = 20;
+            var chartWidth = width - padding * 2;
+            var chartHeight = height - padding * 2;
+
+            var svgContent = '<defs>';
+            svgContent += '<linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">';
+            svgContent += '<stop offset="0%" style="stop-color:#fff;stop-opacity:0.3" />';
+            svgContent += '<stop offset="100%" style="stop-color:#fff;stop-opacity:0" />';
+            svgContent += '</linearGradient>';
+            svgContent += '</defs>';
+
+            for (var i = 0; i <= 4; i++) {
+                var y = padding + (chartHeight / 4) * i;
+                svgContent += '<line x1="' + padding + '" y1="' + y + '" x2="' + (width - padding) + '" y2="' + y + '" class="chart-grid-line"/>';
+            }
+
+            var points = [];
+            for (var i = 0; i < config.daysToShow; i++) {
+                var x = padding + (chartWidth / (config.daysToShow - 1)) * i;
+                var completion = getDayCompletion(i);
+                var y = padding + chartHeight - (completion / 100) * chartHeight;
+                points.push({ x: x, y: y, completion: completion });
+            }
+
+            var areaPath = 'M ' + points[0].x + ',' + points[0].y;
+            for (var i = 1; i < points.length; i++) {
+                areaPath += ' L ' + points[i].x + ',' + points[i].y;
+            }
+            areaPath += ' L ' + points[points.length - 1].x + ',' + (height - padding);
+            areaPath += ' L ' + points[0].x + ',' + (height - padding) + ' Z';
+            svgContent += '<path d="' + areaPath + '" class="chart-area"/>';
+
+            var linePath = 'M ' + points[0].x + ',' + points[0].y;
+            for (var i = 1; i < points.length; i++) {
+                linePath += ' L ' + points[i].x + ',' + points[i].y;
+            }
+            svgContent += '<path d="' + linePath + '" class="chart-line"/>';
+
+            for (var i = 0; i < points.length; i++) {
+                svgContent += '<circle cx="' + points[i].x + '" cy="' + points[i].y + '" r="3" class="chart-point"/>';
+            }
+
+            svg.innerHTML = svgContent;
+
+            var labelsDiv = document.getElementById('chartLabels');
+            var step = Math.ceil(config.daysToShow / 7);
+            var labelsHTML = '';
+            for (var i = 0; i < config.daysToShow; i += step) {
+                labelsHTML += '<span class="chart-label">' + formatDate(getDateForDay(i)) + '</span>';
+            }
+            labelsDiv.innerHTML = labelsHTML;
+        }
+
+        function renderSummary() {
+            var grid = document.getElementById('summaryGrid');
+            var html = '';
+            for (var i = 0; i < config.habits.length; i++) {
+                var habit = config.habits[i];
+                var completion = getHabitCompletion(habit);
+                var color = getBarColor(completion);
+                html += '<div class="summary-card">';
+                html += '<div class="summary-habit">' + habit + '</div>';
+                html += '<div class="summary-bar">';
+                html += '<div class="summary-bar-fill" style="width: ' + completion + '%; background: ' + color + ';"></div>';
+                html += '</div>';
+                html += '<div class="summary-percentage">' + Math.round(completion) + '% completed</div>';
+                html += '</div>';
+            }
+            grid.innerHTML = html;
+        }
+
+        function init() {
+            var now = new Date();
+            var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
+
+            initializeData();
+            renderTable();
+            calculateStats();
+            renderChart();
+            renderSummary();
+        }
+
+        init();
+    </script>
+</body>
+</html>
