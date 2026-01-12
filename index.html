@@ -51,6 +51,52 @@
             font-weight: 400;
         }
 
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 24px;
+            align-items: center;
+        }
+
+        .btn {
+            background: #1a1a1a;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #e5e5e5;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .btn:hover {
+            background: #252525;
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+            color: #ef4444;
+        }
+
+        .btn-danger:hover {
+            background: rgba(239, 68, 68, 0.2);
+            border-color: rgba(239, 68, 68, 0.5);
+        }
+
+        select {
+            background: #1a1a1a;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #e5e5e5;
+            padding: 10px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 13px;
+            font-family: inherit;
+        }
+
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -373,6 +419,13 @@
             </div>
         </header>
 
+        <div class="controls">
+            <select id="monthSelect"></select>
+            <select id="yearSelect"></select>
+            <button class="btn" onclick="goToToday()">Today</button>
+            <button class="btn btn-danger" onclick="resetData()">Reset All Data</button>
+        </div>
+
         <div class="stats-grid">
             <div class="stat-card">
                 <div class="stat-label">Today's Progress</div>
@@ -387,12 +440,12 @@
                 <div style="font-size: 12px; color: #666; margin-top: 4px;">days</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Weekly Average</div>
-                <div class="stat-value" id="weeklyAvg">0%</div>
+                <div class="stat-label">This Month</div>
+                <div class="stat-value" id="monthAvg">0%</div>
             </div>
             <div class="stat-card">
-                <div class="stat-label">Period Average</div>
-                <div class="stat-value" id="periodAvg">0%</div>
+                <div class="stat-label">All Time Average</div>
+                <div class="stat-value" id="allTimeAvg">0%</div>
             </div>
         </div>
 
@@ -421,28 +474,105 @@
     </div>
 
     <script>
+        var STORAGE_KEY = 'habitTrackerData';
+        
         var config = {
-            year: 2026,
-            daysToShow: 14,
             habits: [
-                'Clean diet',
-                'Exercise/physical activity',
-                'less than 5 four sscreen time ',
-                'Personal comitments ',
-                'give 5+ hours to your work'
-            ],
-            startDate: new Date(2026, 0, 6)
+                'Morning Meditation',
+                'Exercise 30 min',
+                'Read 20 pages',
+                'Drink 8 glasses water',
+                'No social media after 9pm'
+            ]
         };
 
+        var currentYear = new Date().getFullYear();
+        var currentMonth = new Date().getMonth();
         var habitData = {};
 
-        function initializeData() {
-            for (var i = 0; i < config.habits.length; i++) {
-                var habit = config.habits[i];
-                habitData[habit] = {};
-                for (var j = 0; j < config.daysToShow; j++) {
-                    habitData[habit][j] = Math.random() > 0.3;
+        function loadData() {
+            try {
+                var stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    habitData = JSON.parse(stored);
+                } else {
+                    habitData = {};
                 }
+            } catch (e) {
+                habitData = {};
+            }
+        }
+
+        function saveData() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(habitData));
+            } catch (e) {
+                console.error('Failed to save data');
+            }
+        }
+
+        function getDateKey(year, month, day) {
+            return year + '-' + (month + 1) + '-' + day;
+        }
+
+        function getDaysInMonth(year, month) {
+            return new Date(year, month + 1, 0).getDate();
+        }
+
+        function initializeMonthYear() {
+            var monthSelect = document.getElementById('monthSelect');
+            var yearSelect = document.getElementById('yearSelect');
+            
+            var months = ['January', 'February', 'March', 'April', 'May', 'June', 
+                         'July', 'August', 'September', 'October', 'November', 'December'];
+            
+            monthSelect.innerHTML = '';
+            for (var i = 0; i < months.length; i++) {
+                var option = document.createElement('option');
+                option.value = i;
+                option.textContent = months[i];
+                if (i === currentMonth) {
+                    option.selected = true;
+                }
+                monthSelect.appendChild(option);
+            }
+            
+            yearSelect.innerHTML = '';
+            for (var y = 2024; y <= 2030; y++) {
+                var option = document.createElement('option');
+                option.value = y;
+                option.textContent = y;
+                if (y === currentYear) {
+                    option.selected = true;
+                }
+                yearSelect.appendChild(option);
+            }
+            
+            monthSelect.addEventListener('change', function() {
+                currentMonth = parseInt(this.value);
+                renderAll();
+            });
+            
+            yearSelect.addEventListener('change', function() {
+                currentYear = parseInt(this.value);
+                renderAll();
+            });
+        }
+
+        function goToToday() {
+            var now = new Date();
+            currentYear = now.getFullYear();
+            currentMonth = now.getMonth();
+            document.getElementById('monthSelect').value = currentMonth;
+            document.getElementById('yearSelect').value = currentYear;
+            renderAll();
+        }
+
+        function resetData() {
+            if (confirm('Are you sure you want to delete ALL habit tracking data? This cannot be undone.')) {
+                habitData = {};
+                saveData();
+                renderAll();
             }
         }
 
@@ -456,30 +586,30 @@
             return date.toLocaleDateString('en-US', options).toUpperCase();
         }
 
-        function getDateForDay(dayIndex) {
-            var date = new Date(config.startDate);
-            date.setDate(date.getDate() + dayIndex);
-            return date;
-        }
-
-        function getDayCompletion(day) {
+        function getDayCompletion(year, month, day) {
             var completed = 0;
+            var dateKey = getDateKey(year, month, day);
+            
             for (var i = 0; i < config.habits.length; i++) {
-                if (habitData[config.habits[i]][day]) {
+                var habit = config.habits[i];
+                if (habitData[habit] && habitData[habit][dateKey]) {
                     completed++;
                 }
             }
             return config.habits.length > 0 ? (completed / config.habits.length) * 100 : 0;
         }
 
-        function getHabitCompletion(habit) {
+        function getHabitCompletion(habit, year, month) {
             var completed = 0;
-            for (var i = 0; i < config.daysToShow; i++) {
-                if (habitData[habit][i]) {
+            var daysInMonth = getDaysInMonth(year, month);
+            
+            for (var day = 1; day <= daysInMonth; day++) {
+                var dateKey = getDateKey(year, month, day);
+                if (habitData[habit] && habitData[habit][dateKey]) {
                     completed++;
                 }
             }
-            return (completed / config.daysToShow) * 100;
+            return daysInMonth > 0 ? (completed / daysInMonth) * 100 : 0;
         }
 
         function getCompletionClass(percentage) {
@@ -495,52 +625,78 @@
         }
 
         function calculateStats() {
-            var todayIndex = 5;
-            var todayCompletion = getDayCompletion(todayIndex);
+            var now = new Date();
+            var todayCompletion = getDayCompletion(now.getFullYear(), now.getMonth(), now.getDate());
             
             var maxStreak = 0;
             var currentStreak = 0;
-            for (var i = 0; i < config.daysToShow; i++) {
-                if (getDayCompletion(i) >= 80) {
+            var today = new Date();
+            
+            for (var i = 0; i < 365; i++) {
+                var checkDate = new Date(today);
+                checkDate.setDate(checkDate.getDate() - i);
+                var comp = getDayCompletion(checkDate.getFullYear(), checkDate.getMonth(), checkDate.getDate());
+                
+                if (comp >= 80) {
                     currentStreak++;
                     maxStreak = Math.max(maxStreak, currentStreak);
                 } else {
+                    if (i === 0) {
+                        break;
+                    }
                     currentStreak = 0;
                 }
             }
 
-            var weeklyTotal = 0;
-            for (var i = 0; i < Math.min(7, config.daysToShow); i++) {
-                weeklyTotal += getDayCompletion(i);
+            var monthTotal = 0;
+            var daysInMonth = getDaysInMonth(currentYear, currentMonth);
+            for (var day = 1; day <= daysInMonth; day++) {
+                monthTotal += getDayCompletion(currentYear, currentMonth, day);
             }
-            var weeklyAvg = weeklyTotal / Math.min(7, config.daysToShow);
+            var monthAvg = daysInMonth > 0 ? monthTotal / daysInMonth : 0;
 
-            var periodTotal = 0;
-            for (var i = 0; i < config.daysToShow; i++) {
-                periodTotal += getDayCompletion(i);
+            var allTimeTotal = 0;
+            var allTimeDays = 0;
+            for (var habit in habitData) {
+                for (var dateKey in habitData[habit]) {
+                    allTimeDays++;
+                }
             }
-            var periodAvg = periodTotal / config.daysToShow;
+            
+            for (var y = 2024; y <= 2030; y++) {
+                for (var m = 0; m < 12; m++) {
+                    var days = getDaysInMonth(y, m);
+                    for (var d = 1; d <= days; d++) {
+                        var comp = getDayCompletion(y, m, d);
+                        if (comp > 0) {
+                            allTimeTotal += comp;
+                            allTimeDays++;
+                        }
+                    }
+                }
+            }
+            var allTimeAvg = allTimeDays > 0 ? allTimeTotal / allTimeDays : 0;
 
             document.getElementById('todayProgress').textContent = Math.round(todayCompletion) + '%';
             document.getElementById('todayBar').style.width = todayCompletion + '%';
             document.getElementById('todayBar').style.background = getBarColor(todayCompletion);
             document.getElementById('bestStreak').textContent = maxStreak;
-            document.getElementById('weeklyAvg').textContent = Math.round(weeklyAvg) + '%';
-            document.getElementById('periodAvg').textContent = Math.round(periodAvg) + '%';
+            document.getElementById('monthAvg').textContent = Math.round(monthAvg) + '%';
+            document.getElementById('allTimeAvg').textContent = Math.round(allTimeAvg) + '%';
         }
 
         function renderTable() {
             var header = document.getElementById('tableHeader');
             var body = document.getElementById('tableBody');
+            var daysInMonth = getDaysInMonth(currentYear, currentMonth);
 
             var headerHTML = '<tr><th>Habit</th>';
-            for (var i = 0; i < config.daysToShow; i++) {
-                var date = getDateForDay(i);
+            for (var day = 1; day <= daysInMonth; day++) {
+                var date = new Date(currentYear, currentMonth, day);
                 var dayName = getDayName(date);
-                var dayDate = formatDate(date).split(' ')[1];
                 headerHTML += '<th><div class="date-header">';
                 headerHTML += '<span class="day-name">' + dayName + '</span>';
-                headerHTML += '<span class="day-date">' + dayDate + '</span>';
+                headerHTML += '<span class="day-date">' + day + '</span>';
                 headerHTML += '</div></th>';
             }
             headerHTML += '</tr>';
@@ -550,8 +706,10 @@
             for (var h = 0; h < config.habits.length; h++) {
                 var habit = config.habits[h];
                 bodyHTML += '<tr><td class="habit-name">' + habit + '</td>';
-                for (var day = 0; day < config.daysToShow; day++) {
-                    var checked = habitData[habit][day] ? 'checked' : '';
+                
+                for (var day = 1; day <= daysInMonth; day++) {
+                    var dateKey = getDateKey(currentYear, currentMonth, day);
+                    var checked = habitData[habit] && habitData[habit][dateKey] ? 'checked' : '';
                     bodyHTML += '<td class="checkbox-cell">';
                     bodyHTML += '<div class="checkbox ' + checked + '" data-habit="' + h + '" data-day="' + day + '"></div>';
                     bodyHTML += '</td>';
@@ -560,8 +718,8 @@
             }
 
             bodyHTML += '<tr class="completion-row"><td class="habit-name">Daily %</td>';
-            for (var day = 0; day < config.daysToShow; day++) {
-                var completion = getDayCompletion(day);
+            for (var day = 1; day <= daysInMonth; day++) {
+                var completion = getDayCompletion(currentYear, currentMonth, day);
                 var completionClass = getCompletionClass(completion);
                 bodyHTML += '<td class="checkbox-cell">';
                 bodyHTML += '<span class="completion-badge ' + completionClass + '">' + Math.round(completion) + '%</span>';
@@ -581,11 +739,15 @@
             var habitIndex = parseInt(e.target.getAttribute('data-habit'));
             var day = parseInt(e.target.getAttribute('data-day'));
             var habit = config.habits[habitIndex];
-            habitData[habit][day] = !habitData[habit][day];
-            renderTable();
-            calculateStats();
-            renderChart();
-            renderSummary();
+            var dateKey = getDateKey(currentYear, currentMonth, day);
+            
+            if (!habitData[habit]) {
+                habitData[habit] = {};
+            }
+            
+            habitData[habit][dateKey] = !habitData[habit][dateKey];
+            saveData();
+            renderAll();
         }
 
         function renderChart() {
@@ -595,6 +757,7 @@
             var padding = 20;
             var chartWidth = width - padding * 2;
             var chartHeight = height - padding * 2;
+            var daysInMonth = getDaysInMonth(currentYear, currentMonth);
 
             var svgContent = '<defs>';
             svgContent += '<linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">';
@@ -609,9 +772,9 @@
             }
 
             var points = [];
-            for (var i = 0; i < config.daysToShow; i++) {
-                var x = padding + (chartWidth / (config.daysToShow - 1)) * i;
-                var completion = getDayCompletion(i);
+            for (var day = 1; day <= daysInMonth; day++) {
+                var x = padding + (chartWidth / (daysInMonth - 1)) * (day - 1);
+                var completion = getDayCompletion(currentYear, currentMonth, day);
                 var y = padding + chartHeight - (completion / 100) * chartHeight;
                 points.push({ x: x, y: y, completion: completion });
             }
@@ -637,10 +800,11 @@
             svg.innerHTML = svgContent;
 
             var labelsDiv = document.getElementById('chartLabels');
-            var step = Math.ceil(config.daysToShow / 7);
+            var step = Math.ceil(daysInMonth / 7);
             var labelsHTML = '';
-            for (var i = 0; i < config.daysToShow; i += step) {
-                labelsHTML += '<span class="chart-label">' + formatDate(getDateForDay(i)) + '</span>';
+            for (var day = 1; day <= daysInMonth; day += step) {
+                var date = new Date(currentYear, currentMonth, day);
+                labelsHTML += '<span class="chart-label">' + formatDate(date) + '</span>';
             }
             labelsDiv.innerHTML = labelsHTML;
         }
@@ -650,7 +814,7 @@
             var html = '';
             for (var i = 0; i < config.habits.length; i++) {
                 var habit = config.habits[i];
-                var completion = getHabitCompletion(habit);
+                var completion = getHabitCompletion(habit, currentYear, currentMonth);
                 var color = getBarColor(completion);
                 html += '<div class="summary-card">';
                 html += '<div class="summary-habit">' + habit + '</div>';
@@ -663,16 +827,21 @@
             grid.innerHTML = html;
         }
 
+        function renderAll() {
+            renderTable();
+            calculateStats();
+            renderChart();
+            renderSummary();
+        }
+
         function init() {
             var now = new Date();
             var options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
             document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
 
-            initializeData();
-            renderTable();
-            calculateStats();
-            renderChart();
-            renderSummary();
+            loadData();
+            initializeMonthYear();
+            renderAll();
         }
 
         init();
